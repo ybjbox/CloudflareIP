@@ -32,20 +32,23 @@
 ### 第一步：Fork / 导入本仓库
 直接克隆或导入本仓库到你的 GitHub 账号。
 
-### 第二步：在 GitHub 配置 Actions Secrets
-前往你的 GitHub 仓库的 **Settings** ➡️ **Secrets and variables** ➡️ **Actions** ➡️ 点击 **New repository secret**，添加以下 4 个变量：
+### 第二步：在 GitHub 配置 Actions 变量与 Secrets
+前往你的 GitHub 仓库的 **Settings** ➡️ **Secrets and variables** ➡️ **Actions**，添加以下配置项（敏感内容推荐在 **Secrets** 页签添加，普通的开关项可以在 **Variables** 页签添加）：
 
-| Secret 键名 | 作用描述 | 示例值 |
+| 变量/Secret 键名 | 作用描述 | 示例值 |
 | :--- | :--- | :--- |
 | `CF_API_TOKEN` | Cloudflare API 令牌（需要有编辑 DNS 的权限） | `xxxxxx_xxxxxxxxxxxxxxxxx` |
 | `CF_ZONE_ID` | Cloudflare 域名区域区域 ID | `a1b2c3d4e5f6g7h8i9j0...` |
 | `CF_BASE_DOMAIN` | 你的主域名（用于自动拼接前缀） | `yourdomain.com` |
-| `BARK_URL` (选填) | Bark 推送地址（用于手机接收结果通知） | `https://api.day.app/YOUR_KEY` |
+| `BARK_URL` (选填) | Bark 推送地址（用于接收结果通知） | `https://api.day.app/YOUR_KEY` |
+| `PUSH_SUCCESS` (选填) | 是否启用更新成功推送（默认 `true`，填 `false` 关闭） | `false` |
+| `PUSH_FAILURE` (选填) | 是否启用更新失败/异常推送（默认 `true`，填 `false` 关闭） | `false` |
 
 > 💡 **Bark 推送说明**：
-> - 脚本在每次域名解析发生变化（如新增或删除 IP 记录）时触发推送。
-> - 推送标题会根据具体执行的测速区域自动显示（如：`【新加坡】优选域名更新成功！`、`【日本】优选域名更新成功！`、`【美国】优选域名更新成功！` 或 `【美国MAX】优选域名更新成功！`）。
-> - 推送通知将伴随清脆的 `glass` 提示音。
+> - 脚本在域名解析成功更新或运行出现异常报错时触发推送。
+> - 两类推送可以单独开关，即在 GitHub 中配置 `PUSH_SUCCESS` 或 `PUSH_FAILURE` 设为 `false` 来单独关闭成功或失败提醒。
+>   - **成功推送**：标题形式如 `【新加坡】优选域名更新成功！`，使用清脆的 `glass` 提示音。
+>   - **失败推送**：标题形式如 `【新加坡】优选域名更新失败！`，并包含详细的异常日志或出错原因，使用警醒的 `alarm` 提示音。
 >
 > 💡 **如何获取 Cloudflare 凭证**：
 > - **ZONE_ID**：在 Cloudflare 域名控制台的右侧“概述”页中可以直接复制。
