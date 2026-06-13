@@ -72,10 +72,10 @@
 
 | 任务名称 | 定时周期 | 生成的订阅文本 | 自动更新绑定的域名 |
 | :--- | :--- | :--- | :--- |
-| **SG** | 每小时 | `SG.txt` | `sg.yourdomain.com` |
-| **JP** | 每小时 | `JP.txt` | `jp.yourdomain.com` |
-| **US** | 每小时 | `US.txt` | `us.yourdomain.com` |
-| **US_MAX** | 每小时 | `US_MAX.txt` | `usmax.yourdomain.com` |
+| **SG** | 每 2 小时 | `SG.txt` | `sg.yourdomain.com` |
+| **JP** | 每 2 小时 | `JP.txt` | `jp.yourdomain.com` |
+| **US** | 每 2 小时 | `US.txt` | `us.yourdomain.com` |
+| **US_MAX** | 每 2 小时 | `US_MAX.txt` | `usmax.yourdomain.com` |
 | **Clean Runs**| 每天 0 点 | - (自动清理多余 Actions 日志，仅保留最新 20 条) | - |
 
 ---
