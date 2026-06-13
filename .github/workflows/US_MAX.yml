@@ -1,4 +1,4 @@
-name: us_max
+name: US_MAX
 
 on:
   push:              # 每次 push 时触发
@@ -25,23 +25,23 @@ jobs:
 
       - name: Run script and save output
         run: |
-          python py/us_max.py > us_max.txt
+          python py/US_MAX.py > US_MAX.txt
 
       - name: Update DNS record
         env:
           CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
           CF_ZONE_ID: ${{ secrets.CF_ZONE_ID }}
-          CF_DNS_NAME: usmax.${{ secrets.CF_BASE_DOMAIN }}
+          CF_DNS_NAME: USMAX.${{ secrets.CF_BASE_DOMAIN }}
           PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
-          IP_FILE: us_max.txt
+          IP_FILE: US_MAX.txt
         run: |
-          python py/dnscf.py
+          python py/DNSCF.py
 
 
       - name: Commit result
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add us_max.txt
-          git commit -m "Auto update us_max.txt [skip ci]" || echo "No changes to commit"
+          git add US_MAX.txt
+          git commit -m "Auto update US_MAX.txt [skip ci]" || echo "No changes to commit"
           git push
