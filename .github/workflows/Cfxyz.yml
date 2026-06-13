@@ -5,7 +5,6 @@ on:
   schedule:
    - cron: '0 */1 * * *' # 每3小时运行一次
   workflow_dispatch:      # 允许手动触发
-
 jobs:
   run-script:
     runs-on: ubuntu-latest
