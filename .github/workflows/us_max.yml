@@ -1,4 +1,4 @@
-name: Cfxyz
+name: us_max
 
 on:
   push:              # 每次 push 时触发
@@ -25,12 +25,12 @@ jobs:
 
       - name: Run script and save output
         run: |
-          python py/Cfxyz.py > Cfxyz.txt
+          python py/us_max.py > us_max.txt
 
       - name: Commit result
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add Cfxyz.txt
-          git commit -m "Auto update Cfxyz.txt [skip ci]" || echo "No changes to commit"
+          git add us_max.txt
+          git commit -m "Auto update us_max.txt [skip ci]" || echo "No changes to commit"
           git push
