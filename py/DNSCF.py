@@ -246,26 +246,59 @@ def main():
     # 获取 DNS 记录（如果为空也允许继续，后面会自动创建）
     dns_records = get_dns_records(CF_DNS_NAME)
 
+    # 整理现有记录：ip -> list of record dicts
+    existing_records = {}
+    for record in dns_records:
+        ip = record['content']
+        if ip not in existing_records:
+            existing_records[ip] = []
+        existing_records[ip].append(record)
+
+    # 目标 IP 去重
+    unique_target_ips = []
+    seen = set()
+    for ip in ip_addresses:
+        if ip not in seen:
+            seen.add(ip)
+            unique_target_ips.append(ip)
+
+    # 判断哪些保留，哪些新增，哪些删除
+    ips_to_keep = set()
+    ips_to_add = []
+
+    for ip in unique_target_ips:
+        if ip in existing_records and len(existing_records[ip]) > 0:
+            ips_to_keep.add(ip)
+            # 消耗一个现有记录
+            existing_records[ip].pop(0)
+        else:
+            ips_to_add.append(ip)
+
+    # 剩下的就是需要删除的记录
+    records_to_delete = []
+    for ip, records in existing_records.items():
+        records_to_delete.extend(records)
+
     # 同步 DNS 记录
     push_plus_content = []
 
-    # 1. 遍历 IP 列表进行更新或新建
-    for index, ip_address in enumerate(ip_addresses):
-        if index < len(dns_records):
-            # 现有记录数足够：更新已有记录
-            dns = update_dns_record(dns_records[index], CF_DNS_NAME, ip_address)
-            push_plus_content.append(dns)
-        else:
-            # 现有记录数不足：创建新记录（小云朵状态为关闭）
-            dns = create_dns_record(CF_DNS_NAME, ip_address)
-            push_plus_content.append(dns)
-
-    # 2. 如果现有记录数多于 IP 数量：删除多余记录
-    if len(dns_records) > len(ip_addresses):
-        for index in range(len(ip_addresses), len(dns_records)):
-            record = dns_records[index]
+    # 1. 删除多余/失效记录
+    if records_to_delete:
+        print(f"[DNSCF] 需要从 {CF_DNS_NAME} 删除 {len(records_to_delete)} 条失效/多余记录。")
+        for record in records_to_delete:
             dns = delete_dns_record(record['id'], CF_DNS_NAME, record.get('content', ''))
             push_plus_content.append(dns)
+
+    # 2. 新增缺失记录
+    if ips_to_add:
+        print(f"[DNSCF] 需要向 {CF_DNS_NAME} 新增 {len(ips_to_add)} 条解析记录。")
+        for ip in ips_to_add:
+            dns = create_dns_record(CF_DNS_NAME, ip)
+            push_plus_content.append(dns)
+
+    # 3. 打印保持不变的
+    for ip in ips_to_keep:
+        print(f"[DNSCF] skip: ip {ip} 已在 {CF_DNS_NAME} 的解析记录中且无变化，保持不变。")
 
     # 发送推送
     if push_plus_content:
