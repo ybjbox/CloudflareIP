@@ -15,7 +15,7 @@ import requests
 CF_API_TOKEN = os.environ.get("CF_API_TOKEN")
 CF_ZONE_ID = os.environ.get("CF_ZONE_ID")
 CF_DNS_NAME = os.environ.get("CF_DNS_NAME")
-PUSHPLUS_TOKEN = os.environ.get("PUSHPLUS_TOKEN")
+BARK_URL = os.environ.get("BARK_URL")  # 新增：Bark 推送 URL
 IP_FILE = os.environ.get("IP_FILE")  # 新增：从本地文件读取 IP 列表
 
 # 请求头
@@ -200,29 +200,28 @@ def delete_dns_record(record_id, name, current_ip):
         return f"ip:{current_ip} 解析 {name} 删除失败"
 
 
-def push_plus(content):
+def push_bark(content):
     """
-    发送 PushPlus 消息推送
+    发送 Bark 消息推送
     """
-    if not PUSHPLUS_TOKEN:
-        print("PUSHPLUS_TOKEN 未设置，跳过消息推送")
+    if not BARK_URL:
+        print("[DNSCF] BARK_URL 未设置，跳过消息推送")
         return
 
-    url = 'http://www.pushplus.plus/send'
     data = {
-        "token": PUSHPLUS_TOKEN,
         "title": "IP优选DNSCF推送",
-        "content": content,
-        "template": "markdown",
-        "channel": "wechat"
+        "body": content,
+        "group": "DNSCF"
     }
 
     try:
-        body = json.dumps(data).encode(encoding='utf-8')
-        headers = {'Content-Type': 'application/json'}
-        requests.post(url, data=body, headers=headers, timeout=DEFAULT_TIMEOUT)
+        response = requests.post(BARK_URL, json=data, timeout=DEFAULT_TIMEOUT)
+        if response.status_code == 200:
+            print("[DNSCF] Bark 消息推送成功")
+        else:
+            print(f"[DNSCF] Bark 消息推送失败: {response.text}")
     except Exception as e:
-        print(f"消息推送失败: {e}")
+        print(f"[DNSCF] Bark 消息推送异常: {e}")
 
 
 def main():
@@ -280,29 +279,29 @@ def main():
         records_to_delete.extend(records)
 
     # 同步 DNS 记录
-    push_plus_content = []
+    push_content = []
 
     # 1. 删除多余/失效记录
     if records_to_delete:
         print(f"[DNSCF] 需要从 {CF_DNS_NAME} 删除 {len(records_to_delete)} 条失效/多余记录。")
         for record in records_to_delete:
             dns = delete_dns_record(record['id'], CF_DNS_NAME, record.get('content', ''))
-            push_plus_content.append(dns)
+            push_content.append(dns)
 
     # 2. 新增缺失记录
     if ips_to_add:
         print(f"[DNSCF] 需要向 {CF_DNS_NAME} 新增 {len(ips_to_add)} 条解析记录。")
         for ip in ips_to_add:
             dns = create_dns_record(CF_DNS_NAME, ip)
-            push_plus_content.append(dns)
+            push_content.append(dns)
 
     # 3. 打印保持不变的
     for ip in ips_to_keep:
         print(f"[DNSCF] skip: ip {ip} 已在 {CF_DNS_NAME} 的解析记录中且无变化，保持不变。")
 
     # 发送推送
-    if push_plus_content:
-        push_plus('\n'.join(push_plus_content))
+    if push_content:
+        push_bark('\n'.join(push_content))
 
 
 if __name__ == '__main__':

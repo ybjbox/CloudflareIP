@@ -16,5 +16,5 @@ jobs:
         with:
           token: ${{ github.token }}
           repository: ${{ github.repository }}
-          retain_days: 3          # 保留最近 3 天的记录
-          keep_minimum_runs: 6    # 每个工作流最少保留 6 次记录（防止全部清空）
+          retain_days: 0          # 保留最近 0 天（全清，由下面的最少保留数接管）
+          keep_minimum_runs: 20   # 每个工作流最少/刚好保留最新的 20 次历史
