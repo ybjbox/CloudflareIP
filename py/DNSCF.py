@@ -208,17 +208,24 @@ def push_bark(content):
         print("[DNSCF] BARK_URL 未设置，跳过消息推送")
         return
 
-    # Extract region from CF_DNS_NAME
-    region_title = "IP优选DNSCF推送"
+    # Extract region from CF_DNS_NAME and map to Chinese region name
+    region_map = {
+        'SG': '新加坡',
+        'JP': '日本',
+        'US': '美国',
+        'USMAX': '美国MAX',
+        'US_MAX': '美国MAX'
+    }
+    region_name = "未知地区"
     if CF_DNS_NAME:
         prefix = CF_DNS_NAME.split('.')[0].upper()
-        if prefix == 'USMAX':
-            prefix = 'US_MAX'
-        region_title = f"IP优选【{prefix}】DNSCF推送"
+        region_name = region_map.get(prefix, prefix)
+    region_title = f"【{region_name}】优选域名更新成功！"
 
     data = {
         "title": region_title,
         "body": content,
+        "sound": "glass",
         "group": "DNSCF"
     }
 
