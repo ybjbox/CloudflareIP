@@ -16,6 +16,7 @@ CF_API_TOKEN = os.environ.get("CF_API_TOKEN")
 CF_ZONE_ID = os.environ.get("CF_ZONE_ID")
 CF_DNS_NAME = os.environ.get("CF_DNS_NAME")
 PUSHPLUS_TOKEN = os.environ.get("PUSHPLUS_TOKEN")
+IP_FILE = os.environ.get("IP_FILE")  # 新增：从本地文件读取 IP 列表
 
 # 请求头
 HEADERS = {
@@ -38,6 +39,29 @@ def get_cf_speed_test_ip(timeout=10, max_retries=5):
     Returns:
         优选 IP 字符串，失败返回 None
     """
+    if IP_FILE:
+        if os.path.exists(IP_FILE):
+            print(f"[dnscf] 从本地文件 {IP_FILE} 读取 IP 列表...")
+            try:
+                ips = []
+                with open(IP_FILE, 'r', encoding='utf-8') as f:
+                    for line in f:
+                        line = line.strip()
+                        if not line or line.startswith('#'):
+                            continue
+                        # 提取注释（#）前面的 IP 地址部分
+                        ip = line.split('#')[0].strip()
+                        if ip:
+                            ips.append(ip)
+                print(f"[dnscf] 成功从本地文件读取了 {len(ips)} 个 IP: {ips}")
+                # 返回逗号分隔的 IP 列表字符串，适配后面的 split(',') 逻辑
+                return ','.join(ips)
+            except Exception as e:
+                print(f"[dnscf] 读取本地文件 {IP_FILE} 失败: {e}")
+                traceback.print_exc()
+        else:
+            print(f"[dnscf] 指定的本地文件 {IP_FILE} 不存在，将自动退回到在线获取模式。")
+
     for attempt in range(max_retries):
         try:
             response = requests.get(
