@@ -113,14 +113,6 @@ def get_dns_records(name):
 def update_dns_record(record_info, name, cf_ip):
     """
     更新 DNS 记录
-
-    Args:
-        record_info: DNS 记录字典，包含 id 和 content
-        name: DNS 记录名称
-        cf_ip: 新的 IP 地址
-
-    Returns:
-        操作结果字符串
     """
     record_id = record_info['id']
     current_ip = record_info.get('content', '')
@@ -128,7 +120,7 @@ def update_dns_record(record_info, name, cf_ip):
     # 如果 IP 相同则跳过更新
     if current_ip == cf_ip:
         current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-        print(f"cf_dns_change skip: ---- Time: {current_time} ---- ip：{cf_ip} (已是最新)")
+        print(f"[DNSCF] cf_dns_change skip: ---- Time: {current_time} ---- ip：{cf_ip} (已是最新)")
         return f"ip:{cf_ip} 解析 {name} 跳过 (已是最新)"
 
     url = f'https://api.cloudflare.com/client/v4/zones/{CF_ZONE_ID}/dns_records/{record_id}'
@@ -143,24 +135,74 @@ def update_dns_record(record_info, name, cf_ip):
         current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 
         if response.status_code == 200:
-            print(f"cf_dns_change success: ---- Time: {current_time} ---- ip：{cf_ip}")
+            print(f"[DNSCF] cf_dns_change success: ---- Time: {current_time} ---- ip：{cf_ip}")
             return f"ip:{cf_ip} 解析 {name} 成功"
         else:
-            print(f"cf_dns_change ERROR: ---- Time: {current_time} ---- MESSAGE: {response.text}")
+            print(f"[DNSCF] cf_dns_change ERROR: ---- Time: {current_time} ---- MESSAGE: {response.text}")
             return f"ip:{cf_ip} 解析 {name} 失败"
     except Exception as e:
         traceback.print_exc()
         current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-        print(f"cf_dns_change ERROR: ---- Time: {current_time} ---- MESSAGE: {e}")
+        print(f"[DNSCF] cf_dns_change ERROR: ---- Time: {current_time} ---- MESSAGE: {e}")
         return f"ip:{cf_ip} 解析 {name} 失败"
+
+
+def create_dns_record(name, cf_ip):
+    """
+    创建 DNS A 记录，小云朵状态为关闭 (proxied: False)
+    """
+    url = f'https://api.cloudflare.com/client/v4/zones/{CF_ZONE_ID}/dns_records'
+    data = {
+        'type': 'A',
+        'name': name,
+        'content': cf_ip,
+        'ttl': 1,
+        'proxied': False
+    }
+
+    try:
+        response = requests.post(url, headers=HEADERS, json=data, timeout=DEFAULT_TIMEOUT)
+        current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+
+        if response.status_code in [200, 201]:
+            print(f"[DNSCF] cf_dns_create success: ---- Time: {current_time} ---- ip：{cf_ip}")
+            return f"ip:{cf_ip} 解析 {name} 创建成功"
+        else:
+            print(f"[DNSCF] cf_dns_create ERROR: ---- Time: {current_time} ---- MESSAGE: {response.text}")
+            return f"ip:{cf_ip} 解析 {name} 创建失败"
+    except Exception as e:
+        traceback.print_exc()
+        current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+        print(f"[DNSCF] cf_dns_create ERROR: ---- Time: {current_time} ---- MESSAGE: {e}")
+        return f"ip:{cf_ip} 解析 {name} 创建失败"
+
+
+def delete_dns_record(record_id, name, current_ip):
+    """
+    删除多余的 DNS 记录
+    """
+    url = f'https://api.cloudflare.com/client/v4/zones/{CF_ZONE_ID}/dns_records/{record_id}'
+
+    try:
+        response = requests.delete(url, headers=HEADERS, timeout=DEFAULT_TIMEOUT)
+        current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+
+        if response.status_code == 200:
+            print(f"[DNSCF] cf_dns_delete success: ---- Time: {current_time} ---- ip：{current_ip}")
+            return f"ip:{current_ip} 解析 {name} 删除成功"
+        else:
+            print(f"[DNSCF] cf_dns_delete ERROR: ---- Time: {current_time} ---- MESSAGE: {response.text}")
+            return f"ip:{current_ip} 解析 {name} 删除失败"
+    except Exception as e:
+        traceback.print_exc()
+        current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+        print(f"[DNSCF] cf_dns_delete ERROR: ---- Time: {current_time} ---- MESSAGE: {e}")
+        return f"ip:{current_ip} 解析 {name} 删除失败"
 
 
 def push_plus(content):
     """
     发送 PushPlus 消息推送
-
-    Args:
-        content: 消息内容
     """
     if not PUSHPLUS_TOKEN:
         print("PUSHPLUS_TOKEN 未设置，跳过消息推送")
@@ -201,22 +243,29 @@ def main():
         print("错误: 未解析到有效 IP 地址")
         return
 
-    # 获取 DNS 记录
+    # 获取 DNS 记录（如果为空也允许继续，后面会自动创建）
     dns_records = get_dns_records(CF_DNS_NAME)
-    if not dns_records:
-        print(f"错误: 未找到 {CF_DNS_NAME} 的 DNS 记录")
-        return
 
-    # 检查记录数量是否足够
-    if len(ip_addresses) > len(dns_records):
-        print(f"警告: IP 数量({len(ip_addresses)})超过 DNS 记录数量({len(dns_records)})，仅更新前 {len(dns_records)} 个")
-        ip_addresses = ip_addresses[:len(dns_records)]
-
-    # 更新 DNS 记录
+    # 同步 DNS 记录
     push_plus_content = []
+
+    # 1. 遍历 IP 列表进行更新或新建
     for index, ip_address in enumerate(ip_addresses):
-        dns = update_dns_record(dns_records[index], CF_DNS_NAME, ip_address)
-        push_plus_content.append(dns)
+        if index < len(dns_records):
+            # 现有记录数足够：更新已有记录
+            dns = update_dns_record(dns_records[index], CF_DNS_NAME, ip_address)
+            push_plus_content.append(dns)
+        else:
+            # 现有记录数不足：创建新记录（小云朵状态为关闭）
+            dns = create_dns_record(CF_DNS_NAME, ip_address)
+            push_plus_content.append(dns)
+
+    # 2. 如果现有记录数多于 IP 数量：删除多余记录
+    if len(dns_records) > len(ip_addresses):
+        for index in range(len(ip_addresses), len(dns_records)):
+            record = dns_records[index]
+            dns = delete_dns_record(record['id'], CF_DNS_NAME, record.get('content', ''))
+            push_plus_content.append(dns)
 
     # 发送推送
     if push_plus_content:

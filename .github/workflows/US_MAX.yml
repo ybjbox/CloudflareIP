@@ -31,7 +31,7 @@ jobs:
         env:
           CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
           CF_ZONE_ID: ${{ secrets.CF_ZONE_ID }}
-          CF_DNS_NAME: USMAX.${{ secrets.CF_BASE_DOMAIN }}
+          CF_DNS_NAME: usmax.${{ secrets.CF_BASE_DOMAIN }}
           PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
           IP_FILE: US_MAX.txt
         run: |
