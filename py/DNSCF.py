@@ -85,7 +85,7 @@ def get_dns_records(name):
         name: DNS 记录名称
 
     Returns:
-        记录字典列表（包含 id 和 content），失败返回空列表
+        记录字典列表（包含 id 和 content），失败返回 None
     """
     records = []
     url = f'https://api.cloudflare.com/client/v4/zones/{CF_ZONE_ID}/dns_records'
@@ -103,9 +103,11 @@ def get_dns_records(name):
                     })
         else:
             print(f'获取 DNS 记录失败: {response.text}')
+            return None
     except Exception as e:
         print(f'获取 DNS 记录异常: {e}')
         traceback.print_exc()
+        return None
 
     return records
 
@@ -200,7 +202,7 @@ def delete_dns_record(record_id, name, current_ip):
         return f"ip:{current_ip} 解析 {name} 删除失败"
 
 
-def push_bark(content):
+def push_bark(content, is_success=True):
     """
     发送 Bark 消息推送
     """
@@ -220,12 +222,18 @@ def push_bark(content):
     if CF_DNS_NAME:
         prefix = CF_DNS_NAME.split('.')[0].upper()
         region_name = region_map.get(prefix, prefix)
-    region_title = f"【{region_name}】优选域名更新成功！"
+
+    if is_success:
+        region_title = f"【{region_name}】优选域名更新成功！"
+        sound = "glass"
+    else:
+        region_title = f"【{region_name}】优选域名更新失败！"
+        sound = "alarm"
 
     data = {
         "title": region_title,
         "body": content,
-        "sound": "glass",
+        "sound": sound,
         "group": "DNSCF"
     }
 
@@ -241,82 +249,104 @@ def push_bark(content):
 
 def main():
     """主函数"""
-    # 检查必要的环境变量
-    if not all([CF_API_TOKEN, CF_ZONE_ID, CF_DNS_NAME]):
-        print("错误: 缺少必要的环境变量 (CF_API_TOKEN, CF_ZONE_ID, CF_DNS_NAME)")
-        return
+    try:
+        # 检查必要的环境变量
+        if not all([CF_API_TOKEN, CF_ZONE_ID, CF_DNS_NAME]):
+            err_msg = "错误: 缺少必要的环境变量 (CF_API_TOKEN, CF_ZONE_ID, CF_DNS_NAME)"
+            print(err_msg)
+            push_bark(err_msg, is_success=False)
+            return
 
-    # 获取最新优选 IP
-    ip_addresses_str = get_cf_speed_test_ip()
-    if not ip_addresses_str:
-        print("错误: 无法获取优选 IP")
-        return
+        # 获取最新优选 IP
+        ip_addresses_str = get_cf_speed_test_ip()
+        if not ip_addresses_str:
+            err_msg = "错误: 无法获取优选 IP"
+            print(err_msg)
+            push_bark(err_msg, is_success=False)
+            return
 
-    ip_addresses = [ip.strip() for ip in ip_addresses_str.split(',') if ip.strip()]
-    if not ip_addresses:
-        print("错误: 未解析到有效 IP 地址")
-        return
+        ip_addresses = [ip.strip() for ip in ip_addresses_str.split(',') if ip.strip()]
+        if not ip_addresses:
+            err_msg = "错误: 未解析到有效 IP 地址"
+            print(err_msg)
+            push_bark(err_msg, is_success=False)
+            return
 
-    # 获取 DNS 记录（如果为空也允许继续，后面会自动创建）
-    dns_records = get_dns_records(CF_DNS_NAME)
+        # 获取 DNS 记录
+        dns_records = get_dns_records(CF_DNS_NAME)
+        if dns_records is None:
+            err_msg = "错误: 无法获取 Cloudflare DNS 记录"
+            print(err_msg)
+            push_bark(err_msg, is_success=False)
+            return
 
-    # 整理现有记录：ip -> list of record dicts
-    existing_records = {}
-    for record in dns_records:
-        ip = record['content']
-        if ip not in existing_records:
-            existing_records[ip] = []
-        existing_records[ip].append(record)
+        # 整理现有记录：ip -> list of record dicts
+        existing_records = {}
+        for record in dns_records:
+            ip = record['content']
+            if ip not in existing_records:
+                existing_records[ip] = []
+            existing_records[ip].append(record)
 
-    # 目标 IP 去重
-    unique_target_ips = []
-    seen = set()
-    for ip in ip_addresses:
-        if ip not in seen:
-            seen.add(ip)
-            unique_target_ips.append(ip)
+        # 目标 IP 去重
+        unique_target_ips = []
+        seen = set()
+        for ip in ip_addresses:
+            if ip not in seen:
+                seen.add(ip)
+                unique_target_ips.append(ip)
 
-    # 判断哪些保留，哪些新增，哪些删除
-    ips_to_keep = set()
-    ips_to_add = []
+        # 判断哪些保留，哪些新增，哪些删除
+        ips_to_keep = set()
+        ips_to_add = []
 
-    for ip in unique_target_ips:
-        if ip in existing_records and len(existing_records[ip]) > 0:
-            ips_to_keep.add(ip)
-            # 消耗一个现有记录
-            existing_records[ip].pop(0)
-        else:
-            ips_to_add.append(ip)
+        for ip in unique_target_ips:
+            if ip in existing_records and len(existing_records[ip]) > 0:
+                ips_to_keep.add(ip)
+                # 消耗一个现有记录
+                existing_records[ip].pop(0)
+            else:
+                ips_to_add.append(ip)
 
-    # 剩下的就是需要删除的记录
-    records_to_delete = []
-    for ip, records in existing_records.items():
-        records_to_delete.extend(records)
+        # 剩下的就是需要删除的记录
+        records_to_delete = []
+        for ip, records in existing_records.items():
+            records_to_delete.extend(records)
 
-    # 同步 DNS 记录
-    push_content = []
+        # 同步 DNS 记录
+        push_content = []
 
-    # 1. 删除多余/失效记录
-    if records_to_delete:
-        print(f"[DNSCF] 需要从 {CF_DNS_NAME} 删除 {len(records_to_delete)} 条失效/多余记录。")
-        for record in records_to_delete:
-            dns = delete_dns_record(record['id'], CF_DNS_NAME, record.get('content', ''))
-            push_content.append(dns)
+        # 1. 删除多余/失效记录
+        if records_to_delete:
+            print(f"[DNSCF] 需要从 {CF_DNS_NAME} 删除 {len(records_to_delete)} 条失效/多余记录。")
+            for record in records_to_delete:
+                dns = delete_dns_record(record['id'], CF_DNS_NAME, record.get('content', ''))
+                push_content.append(dns)
 
-    # 2. 新增缺失记录
-    if ips_to_add:
-        print(f"[DNSCF] 需要向 {CF_DNS_NAME} 新增 {len(ips_to_add)} 条解析记录。")
-        for ip in ips_to_add:
-            dns = create_dns_record(CF_DNS_NAME, ip)
-            push_content.append(dns)
+        # 2. 新增缺失记录
+        if ips_to_add:
+            print(f"[DNSCF] 需要向 {CF_DNS_NAME} 新增 {len(ips_to_add)} 条解析记录。")
+            for ip in ips_to_add:
+                dns = create_dns_record(CF_DNS_NAME, ip)
+                push_content.append(dns)
 
-    # 3. 打印保持不变的
-    for ip in ips_to_keep:
-        print(f"[DNSCF] skip: ip {ip} 已在 {CF_DNS_NAME} 的解析记录中且无变化，保持不变。")
+        # 3. 打印保持不变的
+        for ip in ips_to_keep:
+            print(f"[DNSCF] skip: ip {ip} 已在 {CF_DNS_NAME} 的解析记录中且无变化，保持不变。")
 
-    # 发送推送
-    if push_content:
-        push_bark('\n'.join(push_content))
+        # 发送推送
+        if push_content:
+            content_str = '\n'.join(push_content)
+            # 统计是否有失败的记录更新
+            has_failure = any("失败" in result for result in push_content)
+            if has_failure:
+                push_bark(content_str, is_success=False)
+            else:
+                push_bark(content_str, is_success=True)
+    except Exception as e:
+        err_msg = f"程序运行异常: {e}\n{traceback.format_exc()}"
+        print(err_msg)
+        push_bark(err_msg, is_success=False)
 
 
 if __name__ == '__main__':
