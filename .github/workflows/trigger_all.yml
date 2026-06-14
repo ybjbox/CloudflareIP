@@ -1,4 +1,4 @@
-name: Trigger All
+name: 一键触发所有测速
 
 on:
   workflow_dispatch:      # 仅允许手动触发
