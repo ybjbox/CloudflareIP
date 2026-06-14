@@ -1,7 +1,6 @@
 name: SG
 
 on:
-  push:              # 每次 push 时触发
   schedule:
    - cron: '0 */2 * * *' # 每2小时运行一次
   workflow_dispatch:      # 允许手动触发
