@@ -7,27 +7,28 @@ on:
 
 jobs:
   run-script:
+    name: 运行测速与同步任务
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - name: Checkout repo
+      - name: 拉取仓库代码
         uses: actions/checkout@v4
 
-      - name: Setup Python
+      - name: 配置 Python 环境
         uses: actions/setup-python@v5
         with:
           python-version: "3.10"
 
-      - name: Install dependencies
+      - name: 安装依赖
         run: |
           pip install -r requirements.txt || true
 
-      - name: Run script and save output
+      - name: 运行测速脚本
         run: |
           python py/US.py > US.txt
 
-      - name: Update DNS record
+      - name: 同步 Cloudflare DNS 解析记录
         env:
           CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
           CF_ZONE_ID: ${{ secrets.CF_ZONE_ID }}
@@ -38,7 +39,7 @@ jobs:
           python py/DNSCF.py
 
 
-      - name: Commit result
+      - name: 提交并推送订阅结果
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"

@@ -1,4 +1,4 @@
-name: Clean Workflow Runs
+name: 自动清理运行记录
 
 on:
   schedule:
@@ -7,11 +7,12 @@ on:
 
 jobs:
   clean-runs:
+    name: 自动清理运行记录任务
     runs-on: ubuntu-latest
     permissions:
       actions: write       # 必须具备 Action 删除权限
     steps:
-      - name: Delete old workflow runs
+      - name: 删除历史运行记录
         uses: Mattraks/delete-workflow-runs@v2
         with:
           token: ${{ github.token }}
