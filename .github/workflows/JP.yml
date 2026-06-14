@@ -26,7 +26,7 @@ jobs:
 
       - name: 运行测速脚本
         run: |
-          python py/JP.py > JP.txt
+          python py/JP.py
 
       - name: 同步 Cloudflare DNS 解析记录
         env:

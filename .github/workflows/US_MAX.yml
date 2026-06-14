@@ -25,7 +25,7 @@ jobs:
 
       - name: 运行测速脚本
         run: |
-          python py/US_MAX.py > US_MAX.txt
+          python py/US_MAX.py
 
       - name: 同步 Cloudflare DNS 解析记录
         env:
