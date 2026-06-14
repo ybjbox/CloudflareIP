@@ -214,14 +214,17 @@ def main() -> int:
         reverse=True,
     )
 
+    # 取前 5 名结果
+    top_pairs = sorted_pairs[:5]
+
     # print to stdout
-    for ip, speed in sorted_pairs:
+    for ip, speed in top_pairs:
         print(f"{ip}#【测速 Nodes】{speed}".strip())
 
     # also write to US_MAX.txt
     try:
         with open("US_MAX.txt", "w", encoding="utf-8") as f:
-            for ip, speed in sorted_pairs:
+            for ip, speed in top_pairs:
                 f.write(f"{ip}#[测速 Nodes] {speed}".strip() + "\n")
     except Exception as exc:
         print(f"Failed to write US_MAX.txt: {exc}", file=sys.stderr)
