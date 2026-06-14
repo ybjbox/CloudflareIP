@@ -10,6 +10,9 @@ jobs:
     permissions:
       actions: write       # 必须赋予 actions 写入权限，以便 GITHUB_TOKEN 能够通过 GitHub CLI 触发其他工作流
     steps:
+      - name: 拉取仓库代码
+        uses: actions/checkout@v4
+
       - name: 运行一键触发脚本
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
