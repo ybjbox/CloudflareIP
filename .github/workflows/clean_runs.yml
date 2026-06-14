@@ -2,7 +2,7 @@ name: 自动清理运行记录
 
 on:
   schedule:
-    - cron: '0 0 * * *'    # 每天凌晨 0 点自动运行一次清理
+    - cron: '0 */12 * * *'    # 每 12 小时自动运行一次清理
   workflow_dispatch:       # 允许手动触发清理
 
 jobs:
@@ -18,4 +18,4 @@ jobs:
           token: ${{ github.token }}
           repository: ${{ github.repository }}
           retain_days: 0          # 保留最近 0 天（全清，由下面的最少保留数接管）
-          keep_minimum_runs: 20   # 每个工作流最少/刚好保留最新的 20 次历史
+          keep_minimum_runs: 10   # 每个工作流最少/刚好保留最新的 10 次历史
