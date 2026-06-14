@@ -1,0 +1,35 @@
+name: Trigger All
+
+on:
+  workflow_dispatch:      # 仅允许手动触发
+
+jobs:
+  trigger:
+    name: 一键触发所有测速与同步任务
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write       # 必须赋予 actions 写入权限，以便 GITHUB_TOKEN 能够通过 GitHub CLI 触发其他工作流
+    steps:
+      - name: 运行一键触发脚本
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "正在触发 SG 工作流..."
+          gh workflow run SG.yml
+          
+          echo "正在触发 JP 工作流..."
+          gh workflow run JP.yml
+          
+          echo "正在触发 US 工作流..."
+          gh workflow run US.yml
+          
+          echo "正在触发 DE 工作流..."
+          gh workflow run DE.yml
+          
+          echo "正在触发 NL 工作流..."
+          gh workflow run NL.yml
+          
+          echo "正在触发 US_MAX 工作流..."
+          gh workflow run US_MAX.yml
+          
+          echo "所有工作流已成功触发并发运行！"

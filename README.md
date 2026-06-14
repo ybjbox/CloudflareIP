@@ -69,7 +69,7 @@
 由于 GitHub 安全限制，Fork 或克隆的仓库默认不自动运行工作流。
 1. 前往仓库的 **Actions** 标签页。
 2. 页面顶部会提示 "Workflows are not running..."，点击 **Enable workflows** 激活。
-3. 可以在左侧分别找到 `SG`、`JP`、`US`、`US_MAX`，点击 **Run workflow** ➡️ **Run workflow** 进行首次运行测试。
+3. 可以在左侧找到 `Trigger All`，点击 **Run workflow** ➡️ **Run workflow**，即可一键触发并并行运行所有地区（SG、JP、US、DE、NL、US_MAX）的测速与同步工作流。您也可以单独在左侧选择某个地区的工作流单独运行。
 
 > 💡 **工作流运行机制与延迟说明**：
 > - **仅通过定时和手动触发**：为了防止 Actions 自动推送代码所引起的无限死循环运行，本项目已去除了 `push` 触发条件。目前工作流仅通过每 2 小时定时自动执行或由您手动触发。
@@ -87,6 +87,7 @@
 | **DE** | 每 2 小时 | `DE.txt` | `de.yourdomain.com` |
 | **NL** | 每 2 小时 | `NL.txt` | `nl.yourdomain.com` |
 | **US_MAX** | 每 2 小时 | `US_MAX.txt` | `usmax.yourdomain.com` |
+| **Trigger All** | 仅手动触发 | - (一键并行触发上述 6 个地区的测速与同步任务) | - |
 | **Clean Runs**| 每天 0 点 | - (自动清理多余 Actions 日志，仅保留最新 20 条) | - |
 
 ---
