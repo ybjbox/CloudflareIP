@@ -1,0 +1,48 @@
+name: NL
+
+on:
+  schedule:
+   - cron: '0 */2 * * *' # 每2小时运行一次
+  workflow_dispatch:      # 允许手动触发
+
+jobs:
+  run-script:
+    name: 运行测速与同步任务
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: 拉取仓库代码
+        uses: actions/checkout@v4
+
+      - name: 配置 Python 环境
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: 安装依赖
+        run: |
+          pip install -r requirements.txt || true
+
+      - name: 运行测速脚本
+        run: |
+          python py/NL.py > NL.txt
+
+      - name: 同步 Cloudflare DNS 解析记录
+        env:
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CF_ZONE_ID: ${{ secrets.CF_ZONE_ID }}
+          CF_DNS_NAME: nl.${{ secrets.CF_BASE_DOMAIN }}
+          BARK_URL: ${{ secrets.BARK_URL }}
+          IP_FILE: NL.txt
+        run: |
+          python py/DNSCF.py
+
+      - name: 提交并推送订阅结果
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add NL.txt
+          git commit -m "Auto update NL.txt [skip ci]" || echo "No changes to commit"
+          git pull --rebase origin main || true
+          git push

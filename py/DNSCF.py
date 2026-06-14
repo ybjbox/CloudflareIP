@@ -229,7 +229,9 @@ def push_bark(content, is_success=True):
         'JP': '日本',
         'US': '美国',
         'USMAX': '美国MAX',
-        'US_MAX': '美国MAX'
+        'US_MAX': '美国MAX',
+        'DE': '德国',
+        'NL': '荷兰'
     }
     region_name = "未知地区"
     if CF_DNS_NAME:

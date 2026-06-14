@@ -7,7 +7,7 @@
 ## 🌟 核心功能
 
 1. **多地区独立测速**：
-   - **SG（新加坡）**、**JP（日本）**、**US（美国）**：通过独立脚本分别测速并筛选出本地区最快的 20 个节点 IP。
+   - **SG（新加坡）**、**JP（日本）**、**US（美国）**、**DE（德国）**、**NL（荷兰）**：通过独立脚本分别测速并筛选出本地区最快的 20 个节点 IP。
    - **US_MAX（综合优选）**：从公开优选源抓取最新测速数据，并按速度从大到小对 IP 进行降序排序。
 2. **DNS 声明式全量同步（全部绑定）**：
    - 自动对比本地测速 IP 列表与 Cloudflare 上现有的 A 记录。
@@ -16,7 +16,7 @@
    - **自动删除**：对已失效/多余的旧 IP 解析进行删除。
    - 彻底解决多个 IP 并发更新冲突及 Cloudflare API `81058` 重复解析错误。
 3. **订阅文件自动更新**：
-   - 定时生成 `SG.txt`、`JP.txt`、`US.txt` 和 `US_MAX.txt` 订阅文件并推送回仓库，可作为你的节点优选 IP 源使用。
+   - 定时生成 `SG.txt`、`JP.txt`、`US.txt`、`DE.txt`、`NL.txt` 和 `US_MAX.txt` 订阅文件并推送回仓库，可作为你的节点优选 IP 源使用。
 4. **并发推送与历史自动清理**：
    - 引入 Rebase 机制，完美避开多个工作流整点同时推送代码到主分支时的并发冲突。
    - 自动运行历史清理工作流，使每个任务严格只保留**最新的 20 次**历史记录，保持仓库极其精简。
@@ -59,6 +59,8 @@
 * **sg**（最终为 `sg.yourdomain.com`）
 * **jp**（最终为 `jp.yourdomain.com`）
 * **us**（最终为 `us.yourdomain.com`）
+* **de**（最终为 `de.yourdomain.com`）
+* **nl**（最终为 `nl.yourdomain.com`）
 * **usmax**（最终为 `usmax.yourdomain.com`）
 
 > ⚠️ **注意**：脚本在后续定时运行时，会自动动态管理并覆盖这四个子域名下的 A 记录。
@@ -82,6 +84,8 @@
 | **SG** | 每 2 小时 | `SG.txt` | `sg.yourdomain.com` |
 | **JP** | 每 2 小时 | `JP.txt` | `jp.yourdomain.com` |
 | **US** | 每 2 小时 | `US.txt` | `us.yourdomain.com` |
+| **DE** | 每 2 小时 | `DE.txt` | `de.yourdomain.com` |
+| **NL** | 每 2 小时 | `NL.txt` | `nl.yourdomain.com` |
 | **US_MAX** | 每 2 小时 | `US_MAX.txt` | `usmax.yourdomain.com` |
 | **Clean Runs**| 每天 0 点 | - (自动清理多余 Actions 日志，仅保留最新 20 条) | - |
 
