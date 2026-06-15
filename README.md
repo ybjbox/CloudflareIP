@@ -41,12 +41,12 @@
 | `CF_ZONE_ID` | Cloudflare 域名区域区域 ID | `a1b2c3d4e5f6g7h8i9j0...` |
 | `CF_BASE_DOMAIN` | 你的主域名（用于自动拼接前缀） | `yourdomain.com` |
 | `BARK_URL` (选填) | Bark 推送地址（用于接收结果通知） | `https://api.day.app/YOUR_KEY` |
-| `PUSH_SUCCESS` (选填) | 是否启用更新成功推送（默认 `true`，填 `false` 关闭） | `false` |
+| `PUSH_SUCCESS` (选填) | 是否启用更新成功推送（默认 `false`，填 `true` 开启） | `true` |
 | `PUSH_FAILURE` (选填) | 是否启用更新失败/异常推送（默认 `true`，填 `false` 关闭） | `false` |
 
 > 💡 **Bark 推送说明**：
 > - 脚本在域名解析成功更新或运行出现异常报错时触发推送。
-> - 两类推送可以单独开关，即在 GitHub 中配置 `PUSH_SUCCESS` 或 `PUSH_FAILURE` 设为 `false` 来单独关闭成功或失败提醒。
+> - 两类推送可以单独开关，默认已关闭成功推送，仅保留失败推送。您可以分别在 GitHub 中配置 `PUSH_SUCCESS` 为 `true` 来开启成功推送，或 `PUSH_FAILURE` 为 `false` 来关闭失败推送。
 >   - **成功推送**：标题形式如 `【新加坡】优选域名更新成功！`，使用清脆的 `glass` 提示音。
 >   - **失败推送**：标题形式如 `【新加坡】优选域名更新失败！`，并包含详细的异常日志或出错原因，使用警醒的 `alarm` 提示音。
 >

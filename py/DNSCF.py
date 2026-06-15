@@ -19,8 +19,8 @@ BARK_URL = os.environ.get("BARK_URL")  # 新增：Bark 推送 URL
 IP_FILE = os.environ.get("IP_FILE")  # 新增：从本地文件读取 IP 列表
 
 # 推送控制开关 (True 启用，False 关闭)
-# 支持通过环境变量控制，默认值为 True (开启)
-PUSH_SUCCESS = os.environ.get("PUSH_SUCCESS", "true").lower() in ("true", "1", "yes")
+# 支持通过环境变量控制，默认成功推送关闭，失败推送开启
+PUSH_SUCCESS = os.environ.get("PUSH_SUCCESS", "false").lower() in ("true", "1", "yes")
 PUSH_FAILURE = os.environ.get("PUSH_FAILURE", "true").lower() in ("true", "1", "yes")
 
 # 请求头
