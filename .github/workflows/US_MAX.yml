@@ -2,7 +2,7 @@ name: US_MAX
 
 on:
   schedule:
-    - cron: '50 */4 * * *' # 每4小时运行一次
+    - cron: '50 */2 * * *' # 每2小时运行一次
   workflow_dispatch:      # 允许手动触发
 
 jobs:
