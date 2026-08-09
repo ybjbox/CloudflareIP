@@ -43,87 +43,8 @@ COUNTRY_CODES = {
 # IP地理位置查询函数
 def get_ip_country(ip):
     """获取IP地址对应的国家信息(返回中文)"""
-    try:
-        # 验证IP格式
-        socket.inet_aton(ip)
-        
-        # 创建会话并配置重试机制
-        import requests
-        session = requests.Session()
-        retry = Retry(total=3, backoff_factor=0.3, status_forcelist=[500, 502, 503, 504])
-        adapter = HTTPAdapter(max_retries=retry)
-        session.mount('http://', adapter)
-        session.mount('https://', adapter)
-        
-        # 尝试使用ipwhois.app API (不需要API密钥)
-        try:
-            url = f"https://ipwhois.app/json/{ip}"
-            response = session.get(url, timeout=15)
-            if response.status_code == 200:
-                data = response.json()
-                if 'country' in data and data['country']:
-                    country = data['country']
-                    # 转换国家名称为中文
-                    if country == 'United States':
-                        return '美国'
-                    elif country == 'China':
-                        return '中国'
-                    elif country == 'Japan':
-                        return '日本'
-                    elif country == 'Singapore':
-                        return '新加坡'
-                    elif country == 'South Korea':
-                        return '韩国'
-                    elif country == 'United Kingdom':
-                        return '英国'
-                    elif country == 'France':
-                        return '法国'
-                    elif country == 'Germany':
-                        return '德国'
-                    elif country == 'Australia':
-                        return '澳大利亚'
-                    elif country == 'Canada':
-                        return '加拿大'
-                    elif country == 'Hong Kong':
-                        return '中国香港'
-                    elif country == 'Taiwan':
-                        return '中国台湾'
-                    # 如果是国家代码，尝试从映射中获取中文名称
-                    elif len(country) == 2:
-                        return COUNTRY_CODES.get(country, country)
-                    return country
-        except Exception as e:
-            print(f"ipwhois.app错误 {ip}: {str(e)}")
-        
-        # 尝试使用ip-api.com的备用端点 (使用HTTP而非HTTPS)
-        try:
-            url = f"http://ip-api.com/json/{ip}?fields=countryCode"
-            response = session.get(url, timeout=15)
-            if response.status_code == 200:
-                data = response.json()
-                if data.get('status') == 'success' and 'countryCode' in data:
-                    country_code = data['countryCode']
-                    # 从映射中获取中文国家名称
-                    return COUNTRY_CODES.get(country_code, country_code)
-        except Exception as e:
-            print(f"ip-api.com错误 {ip}: {str(e)}")
-        
-        # 基于IP地址范围的简单判断 (Cloudflare IP范围)
-        # 这些IP看起来是Cloudflare的IP地址
-        octets = ip.split('.')
-        if octets[0] == '104' and octets[1] == '18':
-            return '美国'  # Cloudflare US IPs
-        elif octets[0] == '108' and octets[1] == '162':
-            return '美国'  # Cloudflare US IPs
-        elif octets[0] == '162' and octets[1] == '159':
-            return '美国'  # Cloudflare US IPs
-        elif octets[0] == '172' and octets[1] == '64':
-            return '美国'  # Cloudflare US IPs
-        
-        return '未知'
-    except Exception as e:
-        print(f"IP验证错误 {ip}: {str(e)}")
-        return '未知'
+    return '未知'
+
 
 def clean_ip(ip_str):
     """清理IP字符串，移除可能的冒号或其他字符"""

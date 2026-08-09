@@ -3,36 +3,37 @@ name: 一键触发所有测速
 on:
   workflow_dispatch:      # 仅允许手动触发
 
+concurrency:
+  group: cloudflare-ip-update-group
+  cancel-in-progress: false
+
 jobs:
   trigger:
     name: 一键触发所有测速与同步任务
     runs-on: ubuntu-latest
     permissions:
-      actions: write       # 必须赋予 actions 写入权限，以便 GITHUB_TOKEN 能够通过 GitHub CLI 触发其他工作流
+      actions: write       # 必须赋予 actions 写入权限
+      contents: read
     steps:
       - name: 拉取仓库代码
         uses: actions/checkout@v4
 
-      - name: 运行一键触发脚本
+      - name: 顺序触发并等待所有测速工作流
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "正在触发 SG 工作流..."
-          gh workflow run SG.yml
-          
-          echo "正在触发 JP 工作流..."
-          gh workflow run JP.yml
-          
-          echo "正在触发 US 工作流..."
-          gh workflow run US.yml
-          
-          echo "正在触发 DE 工作流..."
-          gh workflow run DE.yml
-          
-          echo "正在触发 NL 工作流..."
-          gh workflow run NL.yml
-          
-          echo "正在触发 US_MAX 工作流..."
-          gh workflow run US_MAX.yml
-          
-          echo "所有工作流已成功触发并发运行！"
+          WORKFLOWS=("SG.yml" "JP.yml" "US.yml" "DE.yml" "NL.yml" "US_MAX.yml")
+          for wf in "${WORKFLOWS[@]}"; do
+            echo "=========================================="
+            echo "正在触发 $wf ..."
+            gh workflow run "$wf"
+            sleep 5
+            RUN_ID=$(gh run list --workflow="$wf" --limit 1 --json databaseId --jq '.[0].databaseId')
+            if [ -n "$RUN_ID" ]; then
+              echo "正在等待 $wf (Run ID: $RUN_ID) 执行完成..."
+              gh run watch "$RUN_ID" || echo "$wf 运行结束"
+            fi
+            echo "$wf 执行完毕！"
+          done
+          echo "所有测速工作流已按顺序依次执行完成！"
+

@@ -2,13 +2,16 @@ name: DE
 
 on:
   schedule:
-   - cron: '0 */1 * * *' # 每1小时运行一次
+    - cron: '30 */4 * * *' # 每4小时运行一次
   workflow_dispatch:      # 允许手动触发
 
 jobs:
   run-script:
     name: 运行测速与同步任务
     runs-on: ubuntu-latest
+    concurrency:
+      group: cloudflare-ip-update-group
+      cancel-in-progress: false
     permissions:
       contents: write
     steps:
@@ -39,10 +42,8 @@ jobs:
           python py/DNSCF.py
 
       - name: 提交并推送订阅结果
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add DE.txt
-          git commit -m "Auto update DE.txt [skip ci]" || echo "No changes to commit"
-          git pull --rebase origin main || true
-          git push
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Auto update DE.txt [skip ci]"
+          file_pattern: "DE.txt"
+
